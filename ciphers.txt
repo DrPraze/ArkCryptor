@@ -1,0 +1,15 @@
+Reverse Cipher
+One Time Pad
+MD5
+Substition Cipher
+Caesar Cipher
+ROT13
+AtBash
+Vigenere
+PlayFair
+Hill2x2
+Column Transcription
+Affine
+Arc4
+Salsa20
+Praze
