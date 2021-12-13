@@ -1,14 +1,18 @@
-import sys, time, wikipedia
+# import sys, time, wikipedia
+import sys, time
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from backend import Methods as M
+from glob import glob
+from algorithms import *
+
 
 class Window(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
 		self.setWindowTitle("ArkCryptor")
-		self.setGeometry(100, 100, 600, 530)
+		self.setGeometry(200, 100, 600, 530)
 		self.setFixedSize(600, 530)
 		app.setStyle("Fusion")
 		dark_palette = QPalette()
@@ -48,6 +52,7 @@ class Window(QtWidgets.QWidget):
 
 		app.setPalette(dark_palette)
 		app.setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }")
+		app.setWindowIcon(QIcon('icon.png'))
 		self.win1()
 
 	def win1(self):
@@ -99,7 +104,7 @@ class Window(QtWidgets.QWidget):
 		selectGroup = QtWidgets.QGroupBox(wid)
 		selectGroup.setTitle('Select Cipher')
 		self.lst = QtWidgets.QListWidget(selectGroup)
-		self.cyphers = [i for i in open('ciphers.txt').readlines()]
+		self.cyphers = [i for i in list(eval(open('ciphers.txt').read()))]
 		self.lst.addItems(self.cyphers)
 		
 		self.search = QtWidgets.QLineEdit()
@@ -109,12 +114,12 @@ class Window(QtWidgets.QWidget):
 
 		keys = QtWidgets.QGroupBox(selectGroup)
 		keys.setTitle('Key(s)')
-		key1 = QtWidgets.QLineEdit()
-		key2 = QtWidgets.QLineEdit()
+		self.key1 = QtWidgets.QLineEdit()
+		self.key2 = QtWidgets.QLineEdit()
 		keyLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
 		keys.setLayout(keyLayout)
-		keyLayout.addWidget(key1)
-		keyLayout.addWidget(key2)
+		keyLayout.addWidget(self.key1)
+		keyLayout.addWidget(self.key2)
 
 		selectLayout = QtWidgets.QGridLayout()
 		selectGroup.setLayout(selectLayout)
@@ -131,13 +136,14 @@ class Window(QtWidgets.QWidget):
 		AboutGroup.setTitle('About selected cipher')
 		ciphergroup = QtWidgets.QGroupBox(AboutGroup)
 		ciphergroup.setTitle('Selected cipher')
-		selected_cipher = QtWidgets.QLineEdit()
+		self.selected_cipher = QtWidgets.QLineEdit()
+
 		ciphergroupLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
 		ciphergroup.setLayout(ciphergroupLayout)
-		ciphergroupLayout.addWidget(selected_cipher)
+		ciphergroupLayout.addWidget(self.selected_cipher)
 
 		self.lst.itemClicked.connect(
-			lambda x:[M.SelectCipher(x, selected_cipher.setText)])
+			lambda x:[M.SelectCipher(x, self.selected_cipher.setText)])
 
 		ShowAbout = QtWidgets.QTextEdit()
 		more = QtWidgets.QPushButton('more...')
@@ -155,7 +161,8 @@ class Window(QtWidgets.QWidget):
 		openBtn = QtWidgets.QPushButton('Open')
 		openBtn.clicked.connect(lambda x:[M.open_text(self,
 		 QtWidgets.QFileDialog.getOpenFileName,
-		  self.fileText.setText, self.output.setText)])
+		  self.fileText.setText, self.input.setText)])
+		self.input = QtWidgets.QTextEdit(openGroup)
 		self.output = QtWidgets.QTextEdit(openGroup)
 
 		copy = QtWidgets.QPushButton('Copy')
@@ -163,10 +170,12 @@ class Window(QtWidgets.QWidget):
 		openGroup.setLayout(openLayout)
 		openLayout.addWidget(self.fileText)
 		openLayout.addWidget(openBtn)
+		openLayout.addWidget(self.input)
 		openLayout.addWidget(self.output)
 		openLayout.addWidget(copy)
 		
 		encrypt = QtWidgets.QPushButton('encrypt')
+		encrypt.clicked.connect(self.encrypt)
 		decrypt = QtWidgets.QPushButton('decrypt')
 
 		cryptoGroup = QtWidgets.QGroupBox(openGroup)
@@ -177,10 +186,10 @@ class Window(QtWidgets.QWidget):
 		cryptoLayout.addWidget(decrypt)
 
 		openLayout.addWidget(cryptoGroup)
-		frameLayout.addWidget(openGroup, 5, 60, 55, 1)
+		frameLayout.addWidget(openGroup, 5, 60, 65, 1)
 
 		progressBar = QtWidgets.QProgressBar()
-		frameLayout.addWidget(progressBar, 36, 60, 55, 1)
+		frameLayout.addWidget(progressBar, 36, 60, 65, 1)
 
 
 		FOpenGroup = QtWidgets.QGroupBox(wid2)
@@ -213,31 +222,35 @@ class Window(QtWidgets.QWidget):
 		FolderLayout.addWidget(KeyGroup)
 
 		FselectGroup = QtWidgets.QGroupBox(wid2)
-		FselectGroup.setTitle('Select Cipher')
-		self.lst_ = QtWidgets.QListWidget(FselectGroup)
+		FselectGroup.setTitle('View Folders')
+		model = QtWidgets.QFileSystemModel()
+		model.setRootPath('')
+		self.lst_ = QtWidgets.QTreeView()
 
-		self.Fsearch = QtWidgets.QLineEdit()
-		Fbtn = QtWidgets.QPushButton('search')
-		Fbtn.clicked.connect(lambda x:[M.SearchCipher(self.Fsearch,
-		 self.lst_, self.cyphers, QtWidgets.QListWidgetItem)])
-		#Edit Fcyphers to cyphers for folder encryption
-		# Fcyphers = [i for i in open('ciphers.txt').readlines()]
-		self.lst_.addItems(self.cyphers)
-		Fkeys = QtWidgets.QGroupBox(FselectGroup)
-		Fkeys.setTitle('Key(s)')
-		Fkey1 = QtWidgets.QLineEdit()
-		Fkey2 = QtWidgets.QLineEdit()
+		self.lst_.setModel(model)
+		self.lst_.setAnimated(False)
+		self.lst_.setIndentation(20)
+		self.lst_.setSortingEnabled(True)
+
+		F1 = QtWidgets.QLabel("//////////////////////////////////////////////////////////////////////////")
+		F2 = QtWidgets.QLabel('\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
+		# self.foldrs = [i for i in glob("")]
+		# self.lst_.addItems(self.foldrs)
+		Fsha = QtWidgets.QGroupBox(FselectGroup)
+		Fsha.setTitle('SHA-256')
+		FShaView = QtWidgets.QTextEdit()
+		FCopyBtn = QtWidgets.QPushButton('copy')
 		FkeyLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
-		Fkeys.setLayout(FkeyLayout)
-		FkeyLayout.addWidget(key1)
-		FkeyLayout.addWidget(key2)
+		Fsha.setLayout(FkeyLayout)
+		FkeyLayout.addWidget(FShaView)
+		FkeyLayout.addWidget(FCopyBtn)
 
 		FselectLayout = QtWidgets.QGridLayout()
 		FselectGroup.setLayout(FselectLayout)
-		FselectLayout.addWidget(self.Fsearch, 0, 2, 10, 1, alignment = Qt.AlignTop)
-		FselectLayout.addWidget(Fbtn, 0, 4, 10, 1, alignment = Qt.AlignTop)
+		FselectLayout.addWidget(F1, 0, 2, 10, 1, alignment = Qt.AlignTop)
+		FselectLayout.addWidget(F2, 0, 4, 10, 1, alignment = Qt.AlignTop)
 		FselectLayout.addWidget(self.lst_, 6, 2, 5, 1)
-		FselectLayout.addWidget(Fkeys, 6, 4, 5, 1)
+		FselectLayout.addWidget(Fsha, 6, 4, 5, 1)
 
 		FolderLayout.addWidget(FselectGroup)
 
@@ -246,6 +259,11 @@ class Window(QtWidgets.QWidget):
 		Lock = QtWidgets.QPushButton('Lock')
 		Unlock = QtWidgets.QPushButton('Remove Lock')
 		hash_sha256 = QtWidgets.QPushButton('SHA 256')
+		hash_sha256.clicked.connect(lambda x:[M.genHash(folder.text(), FShaView.setText)])
+		# openimg_btn.clicked.connect(lambda x :[M.OpenImage(self, 
+		# 	QtWidgets.QFileDialog.getOpenFileName, image.setText, QtWidgets.QLabel,
+		# 	QPixmap, DisplayLayout)])
+
 		FtoolLayout = QtWidgets.QGridLayout()
 		FTools.setLayout(FtoolLayout)
 		FtoolLayout.addWidget(Lock, 0, 0, 2, 1)
@@ -302,27 +320,29 @@ class Window(QtWidgets.QWidget):
 		SteganGrp.setTitle('steganography')
 		encrypt_btn = QtWidgets.QPushButton("encrypt")
 		encrypt_btn.clicked.connect(lambda x:[M.encodeSteganography(
-			TxtInImg.isChecked(), image.text(), text.text())])
+			TxtInImg.isChecked(), image.text(), text.text(), 
+			QtWidgets.QFileDialog.getNewFileName(self, 'Save As', '*.jpg'))])
 		decrypt_btn = QtWidgets.QPushButton("decrypt")
-		copy_btn = QtWidgets.QPushButton("copy text")
+		decrypt_btn.clicked.connect(lambda x:[M.decodeSteganography(
+			TxtInImg.isChecked(), image.text(), text.text())])
+		paste_btn = QtWidgets.QPushButton("paste text")
 		SteganGrpLayout = QtWidgets.QGridLayout()
 		SteganGrp.setLayout(SteganGrpLayout)
 		SteganGrpLayout.addWidget(encrypt_btn, 0, 0, 2, 1)
 		SteganGrpLayout.addWidget(decrypt_btn, 0, 1, 2, 1)
-		SteganGrpLayout.addWidget(copy_btn, 0, 2, 2, 1)
+		SteganGrpLayout.addWidget(paste_btn, 0, 2, 2, 1)
 		SteganLayout.addWidget(SteganGrp)
 
-x
 		MediaOpnGrp = QtWidgets.QGroupBox(wid4)
 		MediaOpnGrp.setTitle('Open Media')
 		Media = QtWidgets.QLineEdit()
 		OpnMedia = QtWidgets.QPushButton('Open Media')
+		playbtn = QtWidgets.QPushButton('Play')
+
 		MediaOpnLyt = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
 		MediaOpnGrp.setLayout(MediaOpnLyt)
 		MediaOpnLyt.addWidget(Media)
 		MediaOpnLyt.addWidget(OpnMedia)
-
-
 
 
 	def HidePassword(self):
@@ -332,13 +352,21 @@ x
 		if not self.check.isChecked():
 			self.password.setEchoMode(QtWidgets.QLineEdit.Normal)
 
+	def encrypt(self):
+		data = open(self.fileText.text(), 'r').read()
+		dct = eval(open('ciphers.txt', 'r').read())
+		k1, k2 = int(self.key1.text()), int(self.key2.text())
+		# print(type(int(self.key1.text())))r
+		# print(dct[self.selected_cipher.text()])
+		self.output.setText(eval(dct[self.selected_cipher.text()])(k1, data))
+
+
 
 if __name__=='__main__':
 	app = QtWidgets.QApplication(sys.argv)
 	win = Window()
 	win.show()
 	sys.exit(app.exec_())
-
 
 
 
