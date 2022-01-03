@@ -1,5 +1,5 @@
-# import sys, time, wikipedia
-import sys, time
+# import wikipedia
+import sys, time, admin
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -7,11 +7,10 @@ from backend import Methods as M
 from glob import glob
 from algorithms import *
 
-
 class Window(QtWidgets.QWidget):
 	def __init__(self):
 		QtWidgets.QWidget.__init__(self)
-		self.setWindowTitle("ArkCryptor")
+		self.setWindowTitle("Cryptor")
 		self.setGeometry(200, 100, 600, 530)
 		self.setFixedSize(600, 530)
 		app.setStyle("Fusion")
@@ -84,21 +83,31 @@ class Window(QtWidgets.QWidget):
 	def setWidgets(self):
 		self.label.clear()
 		self.load_button.deleteLater()
+		
 		tabwidget = QtWidgets.QTabWidget()
+		
 		wid = QtWidgets.QFrame()
 		wid2 = QtWidgets.QFrame()
 		wid3 = QtWidgets.QFrame()
 		wid4 = QtWidgets.QFrame()
+		wid5 = QtWidgets.QFrame()
+		wid6 = QtWidgets.QFrame()
+
 		tab1 = tabwidget.addTab(wid, "Text")
 		tab2 = tabwidget.addTab(wid2, "Folder")
 		tab3 = tabwidget.addTab(wid3, "Steganography")
-		tab4 = tabwidget.addTab(wid4, "Media")
+		tab4 = tabwidget.addTab(wid4, "Crack")
+		tab5 = tabwidget.addTab(wid5, "Handy")
+		tab6 = tabwidget.addTab(wid6, "About")
 
 		tabwidget.setTabPosition(QtWidgets.QTabWidget.West)
 		tabwidget.setTabIcon(tab1, QIcon('imgs/text.png'))
 		tabwidget.setTabIcon(tab2, QIcon('imgs/folder.png'))
 		tabwidget.setTabIcon(tab3, QIcon('imgs/image.png'))
-		tabwidget.setTabIcon(tab4, QIcon('imgs/media.png'))
+		tabwidget.setTabIcon(tab4, QIcon('imgs/crack.png'))
+		tabwidget.setTabIcon(tab5, QIcon('imgs/handy.png'))
+		tabwidget.setTabIcon(tab6, QIcon('imgs/about.png'))
+
 		self.layout.addWidget(tabwidget, alignment=Qt.AlignLeft)
 
 		selectGroup = QtWidgets.QGroupBox(wid)
@@ -194,14 +203,14 @@ class Window(QtWidgets.QWidget):
 
 		FOpenGroup = QtWidgets.QGroupBox(wid2)
 		FOpenGroup.setTitle("Open Folder")
-		folder = QtWidgets.QLineEdit()
+		self.folder = QtWidgets.QLineEdit()
 		open_btn = QtWidgets.QPushButton('Open')
 		#fix this
 		open_btn.clicked.connect(lambda x:[M.OpenFolder(self, 
-			QtWidgets.QFileDialog.getExistingDirectory, folder.setText)])
+			QtWidgets.QFileDialog.getExistingDirectory, self.folder.setText)])
 		OpenLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
 		FOpenGroup.setLayout(OpenLayout)
-		OpenLayout.addWidget(folder)
+		OpenLayout.addWidget(self.folder)
 		OpenLayout.addWidget(open_btn)
 		FolderLayout = QtWidgets.QVBoxLayout()
 		wid2.setLayout(FolderLayout)
@@ -212,7 +221,7 @@ class Window(QtWidgets.QWidget):
 		password_label = QtWidgets.QLabel('password:')
 		self.password = QtWidgets.QLineEdit()
 		self.check = QtWidgets.QCheckBox('Hide password')
-		self.check.stateChanged.connect(self.HidePassword)
+		self.check.stateChanged.connect(lambda:[self.HidePassword(self.password, self.check)])
 
 		KGroupLayout = QtWidgets.QGridLayout()
 		KeyGroup.setLayout(KGroupLayout)
@@ -223,17 +232,19 @@ class Window(QtWidgets.QWidget):
 
 		FselectGroup = QtWidgets.QGroupBox(wid2)
 		FselectGroup.setTitle('View Folders')
-		model = QtWidgets.QFileSystemModel()
-		model.setRootPath('')
-		self.lst_ = QtWidgets.QTreeView()
+		# model = QtWidgets.QFileSystemModel()
+		# model.setRootPath('')
+		# self.lst_ = QtWidgets.QTreeView()
+		self.lst_ = QtWidgets.QListWidget(FselectGroup)
+		self.lst_.addItems(i.replace('\n', '') for i in open('HiddenFiles.{21EC2020-3AEA-1069-A2DD-08002B30309D}').readlines())
 
-		self.lst_.setModel(model)
-		self.lst_.setAnimated(False)
-		self.lst_.setIndentation(20)
-		self.lst_.setSortingEnabled(True)
+		# self.lst_.setModel(model)
+		# self.lst_.setAnimated(False)
+		# self.lst_.setIndentation(20)
+		# self.lst_.setSortingEnabled(True)
 
-		F1 = QtWidgets.QLabel("//////////////////////////////////////////////////////////////////////////")
-		F2 = QtWidgets.QLabel('\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
+		F1 = QtWidgets.QLabel('/'*124)
+		F2 = QtWidgets.QLabel('\\'*124)
 		# self.foldrs = [i for i in glob("")]
 		# self.lst_.addItems(self.foldrs)
 		Fsha = QtWidgets.QGroupBox(FselectGroup)
@@ -257,9 +268,18 @@ class Window(QtWidgets.QWidget):
 		FTools = QtWidgets.QGroupBox(wid2)
 		FTools.setTitle('Tools')
 		Lock = QtWidgets.QPushButton('Lock')
-		Unlock = QtWidgets.QPushButton('Remove Lock')
+		Lock.clicked.connect(lambda x:[M.Lock(self.password.text(),
+			self.folder.text(),'L')])
+		Unlock = QtWidgets.QPushButton('Unlock')
+		Unlock.clicked.connect(lambda x:[M.Lock(self.password.text(),
+			self.folder.text(), 'U')])
+		change = QtWidgets.QPushButton('Change')
+		change.clicked.connect(lambda x:[M.Lock(self.password.text(),
+			self.folder.text(), 'U')])
+		forgot = QtWidgets.QPushButton('Forgot')
 		hash_sha256 = QtWidgets.QPushButton('SHA 256')
-		hash_sha256.clicked.connect(lambda x:[M.genHash(folder.text(), FShaView.setText)])
+		hash_sha256.clicked.connect(lambda x:[M.genHash(folder.text(),
+		 FShaView.setText)])
 		# openimg_btn.clicked.connect(lambda x :[M.OpenImage(self, 
 		# 	QtWidgets.QFileDialog.getOpenFileName, image.setText, QtWidgets.QLabel,
 		# 	QPixmap, DisplayLayout)])
@@ -268,7 +288,9 @@ class Window(QtWidgets.QWidget):
 		FTools.setLayout(FtoolLayout)
 		FtoolLayout.addWidget(Lock, 0, 0, 2, 1)
 		FtoolLayout.addWidget(Unlock, 0, 1, 2, 1)
-		FtoolLayout.addWidget(hash_sha256, 0, 2, 2, 1)
+		FtoolLayout.addWidget(change, 0, 2, 2, 1)
+		FtoolLayout.addWidget(forgot, 0, 3, 2, 1)
+		FtoolLayout.addWidget(hash_sha256, 0, 4, 2, 1)
 
 		FolderLayout.addWidget(FTools)
 
@@ -292,8 +314,8 @@ class Window(QtWidgets.QWidget):
 		SteganLayout.addWidget(DisplayGrp)
 
 		openimg_btn.clicked.connect(lambda x :[M.OpenImage(self, 
-			QtWidgets.QFileDialog.getOpenFileName, image.setText, QtWidgets.QLabel,
-			QPixmap, DisplayLayout)])
+			QtWidgets.QFileDialog.getOpenFileName, image.setText,
+			QtWidgets.QLabel, QPixmap, DisplayLayout)])
 
 		TextGrp = QtWidgets.QGroupBox(wid3)
 		TextGrp.setTitle('Steganographise text')
@@ -302,10 +324,9 @@ class Window(QtWidgets.QWidget):
 		
 		HidTxtInImg = QtWidgets.QRadioButton("Hide text in viewable image")
 		TxtInImg = QtWidgets.QRadioButton("Hide text in unviewable image")
-		OutBtn = QtWidgets.QPushButton('////////////////////////////////////////////////////////////////////////////////////////')
+		OutBtn = QtWidgets.QPushButton('////'*200)
 		OutBtn.setFlat(True)
 		oUtPuT = QtWidgets.QLineEdit()
-
 
 		TextGrpLayout = QtWidgets.QGridLayout()
 		TextGrp.setLayout(TextGrpLayout)
@@ -333,36 +354,179 @@ class Window(QtWidgets.QWidget):
 		SteganGrpLayout.addWidget(paste_btn, 0, 2, 2, 1)
 		SteganLayout.addWidget(SteganGrp)
 
-		MediaOpnGrp = QtWidgets.QGroupBox(wid4)
-		MediaOpnGrp.setTitle('Open Media')
-		Media = QtWidgets.QLineEdit()
-		OpnMedia = QtWidgets.QPushButton('Open Media')
-		playbtn = QtWidgets.QPushButton('Play')
 
-		MediaOpnLyt = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
-		MediaOpnGrp.setLayout(MediaOpnLyt)
-		MediaOpnLyt.addWidget(Media)
-		MediaOpnLyt.addWidget(OpnMedia)
+		#====================Cr@ck T@b R3G!0N==================
+		CrackGrp = QtWidgets.QGroupBox()
+		CrackGrp.setTitle("$tuff2Cr@ck")
+		
+		OpenGrp = QtWidgets.QGroupBox(CrackGrp)
+		OpenGrp.setTitle("Open Text")
+		openedFile = QtWidgets.QLineEdit()
+		openButton = QtWidgets.QPushButton("Open")
+
+		OpenGrpLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+		OpenGrp.setLayout(OpenGrpLayout)
+		OpenGrpLayout.addWidget(openedFile)
+		OpenGrpLayout.addWidget(openButton)
+
+		SelectGrp = QtWidgets.QGroupBox(CrackGrp)
+		SelectGrp.setTitle('Select Cipher')
+		self._lst_ = QtWidgets.QListWidget(SelectGrp)
+		self._lst_.addItems(self.cyphers)		
+		self._search_ = QtWidgets.QLineEdit()
+		_btn_ = QtWidgets.QPushButton('search')
+		_btn_.clicked.connect(lambda x:[M.SearchCipher(self.search,
+		 self._lst_, self.cyphers, QtWidgets.QListWidgetItem)])
+		SelectGrpLayout = QtWidgets.QGridLayout()
+		SelectGrp.setLayout(SelectGrpLayout)
+		SelectGrpLayout.addWidget(self._search_, 0, 0, 1, 1)
+		SelectGrpLayout.addWidget(_btn_, 0, 1, 1, 1)
+		SelectGrpLayout.addWidget(self._lst_, 1, 0, 1, 2)
+
+		crack_btn = QtWidgets.QPushButton("Crack")
+
+		CipherGrp = QtWidgets.QGroupBox(CrackGrp)
+		CipherGrp.setTitle("Cipher text")
+		Ciphertext = QtWidgets.QTextEdit()
+		CipherGrpLayout = QtWidgets.QGridLayout()
+		CipherGrp.setLayout(CipherGrpLayout)
+		CipherGrpLayout.addWidget(Ciphertext)
+
+		CrackedGrp = QtWidgets.QGroupBox(CrackGrp)
+		CrackedGrp.setTitle("Cracked Text")
+		Crackedtext = QtWidgets.QTextEdit()
+		copy_btn = QtWidgets.QPushButton("Copy")
+		CrackedGrpLayout = QtWidgets.QGridLayout()
+		CrackedGrp.setLayout(CrackedGrpLayout)
+		CrackedGrpLayout.addWidget(Crackedtext)
+		CrackedGrpLayout.addWidget(copy_btn)
+
+		CrackGrpLayout = QtWidgets.QGridLayout()
+		CrackGrp.setLayout(CrackGrpLayout)
+		CrackGrpLayout.addWidget(OpenGrp)
+		CrackGrpLayout.addWidget(SelectGrp)
+		CrackGrpLayout.addWidget(crack_btn)
+		
+		OutputGrp = QtWidgets.QGroupBox()
+		OutputGrp.setTitle("0utput")
+		OutputLayout = QtWidgets.QGridLayout()
+		OutputGrp.setLayout(OutputLayout)
+		OutputLayout.addWidget(CipherGrp)
+		OutputLayout.addWidget(CrackedGrp)
+		OutputLayout.addWidget(copy_btn)
+
+		wid4Layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+		wid4.setLayout(wid4Layout)
+		wid4Layout.addWidget(CrackGrp)
+		wid4Layout.addWidget(OutputGrp)
+
+		#================= Handy Tab Region ================
+		PassTestGrp = QtWidgets.QGroupBox()
+		PassTestGrp.setTitle("Password Test")
+		pwdGrp = QtWidgets.QGroupBox()
+		pwdGrp.setTitle("Password")
+		pwd_label = QtWidgets.QLabel("Enter Password:")
+		self.pwd_entry = QtWidgets.QLineEdit()
+		self.pwd_check = QtWidgets.QCheckBox('Hide Password')
+		self.pwd_check.stateChanged.connect(lambda:[self.HidePassword(self.pwd_entry, self.pwd_check)])
+
+		info_label_frame = QtWidgets.QGroupBox()
+		info_label_frame.setTitle("Password info")
+		Password_info = QtWidgets.QTextEdit()
+		labframeLayout = QtWidgets.QGridLayout()
+		info_label_frame.setLayout(labframeLayout)
+		labframeLayout.addWidget(Password_info)
+
+		pwdGrpLayout = QtWidgets.QGridLayout()
+		pwdGrp.setLayout(pwdGrpLayout)
+		pwdGrpLayout.addWidget(pwd_label, 0, 0, 1, 1)
+		pwdGrpLayout.addWidget(self.pwd_entry, 0, 1, 1, 1)
+		pwdGrpLayout.addWidget(self.pwd_check, 1, 0, 1, 1)
+
+		PassTestGrpLayout = QtWidgets.QGridLayout()
+		PassTestGrp.setLayout(PassTestGrpLayout)
+		PassTestGrpLayout.addWidget(pwdGrp)
+		PassTestGrpLayout.addWidget(info_label_frame)
+
+		Border = QtWidgets.QLabel("|\n"*1002)
+
+		BaseConvertGrp = QtWidgets.QGroupBox()
+		BaseConvertGrp.setTitle("Convert Bases")
+		
+		slct_numGrp = QtWidgets.QGroupBox()
+		slct_numGrp.setTitle("Put in No.")
+		self.slct_num = QtWidgets.QSpinBox()
+		slct_numGrpLayout = QtWidgets.QGridLayout()
+		slct_numGrp.setLayout(slct_numGrpLayout)
+		slct_numGrpLayout.addWidget(self.slct_num)
+
+		NoBaseGrp = QtWidgets.QGroupBox()
+		base_label1 = QtWidgets.QLabel("Selected Number Base:")
+		self.number_base = QtWidgets.QSpinBox()
+		_border_ = QtWidgets.QLabel("--"*25)
+
+		NoBaseGrpLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+		NoBaseGrp.setLayout(NoBaseGrpLayout)
+		NoBaseGrpLayout.addWidget(base_label1)
+		NoBaseGrpLayout.addWidget(self.number_base)
+
+		ConvertBaseGrp = QtWidgets.QGroupBox()
+		base_label2 = QtWidgets.QLabel("Convert To Base:")
+		self.convert_base = QtWidgets.QSpinBox()
+		ConvertBaseLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+		ConvertBaseGrp.setLayout(ConvertBaseLayout)
+		ConvertBaseLayout.addWidget(base_label2)
+		ConvertBaseLayout.addWidget(self.convert_base)
+
+		output_label_frame = QtWidgets.QGroupBox()
+		output_label_frame.setTitle("Base Output")
+		BaseOutput = QtWidgets.QTextEdit()
+		BtnGrp = QtWidgets.QGroupBox()
+		convert_btn = QtWidgets.QPushButton("Convert")
+		copy_btn1 = QtWidgets.QPushButton("Copy")
+		BtnGrpLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+		BtnGrp.setLayout(BtnGrpLayout)
+		BtnGrpLayout.addWidget(convert_btn)
+		BtnGrpLayout.addWidget(copy_btn1)
+		BlabframeLayout = QtWidgets.QGridLayout()
+		output_label_frame.setLayout(BlabframeLayout)
+		BlabframeLayout.addWidget(BaseOutput)
+		BlabframeLayout.addWidget(BtnGrp)
+
+		BaseLayout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.TopToBottom)
+		BaseConvertGrp.setLayout(BaseLayout)
+		BaseLayout.addWidget(slct_numGrp)
+		BaseLayout.addWidget(NoBaseGrp)
+		BaseLayout.addWidget(_border_)
+		BaseLayout.addWidget(ConvertBaseGrp)
+		BaseLayout.addWidget(output_label_frame)
 
 
-	def HidePassword(self):
-		if self.check.isChecked():
-			self.password.setEchoMode(QtWidgets.QLineEdit.Password)
-			self.password.setStyleSheet('lineedit-password-character: 9679')
-		if not self.check.isChecked():
-			self.password.setEchoMode(QtWidgets.QLineEdit.Normal)
+		wid5Layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+		wid5.setLayout(wid5Layout)
+		wid5Layout.addWidget(PassTestGrp)
+		wid5Layout.addWidget(Border)
+		wid5Layout.addWidget(BaseConvertGrp)
+
+	def HidePassword(self, password, check):
+		if check.isChecked():
+			password.setEchoMode(QtWidgets.QLineEdit.Password)
+			password.setStyleSheet('lineedit-password-character: 9679')
+		if not check.isChecked():
+			password.setEchoMode(QtWidgets.QLineEdit.Normal)
 
 	def encrypt(self):
 		data = open(self.fileText.text(), 'r').read()
 		dct = eval(open('ciphers.txt', 'r').read())
 		k1, k2 = int(self.key1.text()), int(self.key2.text())
-		# print(type(int(self.key1.text())))r
+		print(type(int(self.key1.text())))
 		# print(dct[self.selected_cipher.text()])
 		self.output.setText(eval(dct[self.selected_cipher.text()])(k1, data))
 
 
-
 if __name__=='__main__':
+	# if not admin.isUserAdmin():
+		# admin.runAsAdmin()
 	app = QtWidgets.QApplication(sys.argv)
 	win = Window()
 	win.show()
